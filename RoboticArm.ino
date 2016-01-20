@@ -17,7 +17,7 @@
 //<模式选择
 //#define RUN_MODE
 #define DEBUG_MODE
-//>模式选择
+//模式选择>
 
 uc debugDegree_tmp[SERVO_NUM * 3] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 uc debugDegree[SERVO_NUM] = {0, 0, 0, 0};
@@ -114,7 +114,7 @@ void servoAction(unsigned char idx,unsigned char action,unsigned char degree)//i
   if(idx == 1 && currentDegree[idx] > 70) currentDegree[idx] = 40;
   if(idx == 0 && currentDegree[idx] < 10) currentDegree[idx] = 170;
   if(idx == 0 && currentDegree[idx] > 170) currentDegree[idx] = 10;
-  //>角度限制
+  //角度限制>
   switch(idx)
   {
     case 0:bottomArm1.write(currentDegree[idx]);break;
@@ -133,7 +133,7 @@ void servoAction(unsigned char idx,unsigned char action,unsigned char degree)//i
   Serial.print(" 4:");// + currentDegree[3]);
   Serial.print(currentDegree[3]);
   Serial.println("");
-  //>实时角度显示
+  //实时角度显示>
 }
 
 void action()
@@ -192,13 +192,13 @@ void servoSerialDebuger()
       }
       //<计算出要调整的角度数据
       for(i = 0;i < SERVO_NUM * 3;i ++) debugDegree[i] = debugDegree_tmp[i] * 100 + debugDegree_tmp[++i] * 10 + debugDegree_tmp[++i];
-      //>计算出要调整的角度数据
+      //计算出要调整的角度数据>
       //<控制舵机转动
       bottomArm1.write(debugDegree[0]);
       bottomArm2.write(debugDegree[1]);
       middleArm1.write(debugDegree[2]);
       middleArm2.write(debugDegree[3]);
-      //>控制舵机转动
+      //控制舵机转动>
       //<实时显示更新角度
       Serial.println("1\t2\t3\t4");
       for(i = 0;i < SERVO_NUM;i ++)
@@ -211,7 +211,7 @@ void servoSerialDebuger()
       delay(8000);
       //<初始化i
       i = 0;
-      //>初始化i
+      //初始化i>
     }
     else Serial.flush(); //刷新串口输入缓存
   }
