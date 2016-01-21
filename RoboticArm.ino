@@ -13,6 +13,7 @@
 #define MOTOR_RIGHT(v) {leftMotor.run(v);rightMotor.run(v);}
 #define MOTOR_LEFT(v) {leftMotor.run(-v);rightMotor.run(-v);}
 #define MOTOR_STOP {leftMotor.run(0);rightMotor.run(0);}
+#define MOTOR_GO(v) {leftMotor.run(v);rightMotor.run(-v);}
 
 //<模式选择
 //#define RUN_MODE
@@ -21,22 +22,22 @@
 
 uc debugDegree_tmp[SERVO_NUM * 3] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 uc debugDegree[SERVO_NUM] = {0, 0, 0, 0};
-uc catchDegree[SERVO_NUM] = {90, 70, 50, 0};
-uc resetDegree[SERVO_NUM] = {90, 50, 70, 66};
-uc currentDegree[SERVO_NUM] = {90, 50, 70, 66};
+uc catchDegree[SERVO_NUM] = {100, 5, 60, 50};
+uc resetDegree[SERVO_NUM] = {110, 90, 70, 90};
+uc currentDegree[SERVO_NUM] = {110, 90, 70, 90};
 uc leftLineData, rightLineData;
 
 int i;
 int state = 0;
 
-MeLineFollower leftLine(PORT_3), rightLine(PORT_4);
+//MeLineFollower leftLine(PORT_3), rightLine(PORT_4);
 MeDCMotor pawArm(PORT_1);
 MeDCMotor leftMotor(M1), rightMotor(M2);
-MePort port1(PORT_5),//1:底座旋转;2:底座俯仰
-       port2(PORT_6);//1：中间上下;2:上部上下
+MePort port1(PORT_3),//1:底座旋转;2:底座俯仰
+       port2(PORT_4);//1：中间上下;2:上部上下
 Servo bottomArm1, bottomArm2, middleArm1, middleArm2;
-MeUltrasonicSensor leftUltra(PORT_7);
-MeUltrasonicSensor rightUltra(PORT_8);
+MeUltrasonicSensor leftUltra(PORT_5);
+MeUltrasonicSensor rightUltra(PORT_6);
 MeInfraredReceiver infraredReceiverDecode(PORT_2);
 
 int16_t servo1Pin =  port1.pin1();
@@ -191,7 +192,10 @@ void servoSerialDebuger()
         debugDegree_tmp[i++] = Serial.read() - 48; //读到的数据是ASCII码，减去48（‘0’的ASCII码）得到输入数字
       }
       //<计算出要调整的角度数据
-      for(i = 0;i < SERVO_NUM * 3;i ++) debugDegree[i] = debugDegree_tmp[i] * 100 + debugDegree_tmp[++i] * 10 + debugDegree_tmp[++i];
+      for(i = 0;i < SERVO_NUM;i ++) 
+      {
+        debugDegree[i] = debugDegree_tmp[3*i] * 100 + debugDegree_tmp[3*i+1] * 10 + debugDegree_tmp[3*i+2];
+      }
       //>计算出要调整的角度数据
       //<控制舵机转动
       bottomArm1.write(debugDegree[0]);
@@ -210,6 +214,7 @@ void servoSerialDebuger()
       //实时显示更新角度>
       delay(8000);
       //<初始化i
+      Serial.flush();
       i = 0;
       //>初始化i
     }
@@ -217,13 +222,13 @@ void servoSerialDebuger()
   }
 }
 
-void lineFlower()//read lineflower data
+/*void lineFlower()//read lineflower data
 {
   leftLineData = leftLine.readSensors();
   rightLineData = rightLine.readSensors();
-}
+}*/
 
-void pickup()
+void pickup(uc* catchDegree)
 {
   bottomArm1.write(catchDegree[0]);
   bottomArm2.write(catchDegree[1]);
@@ -236,7 +241,7 @@ void gogogo()
   if(leftUltra.distanceCm() < 20 || rightUltra.distanceCm() < 20)
   {
     MOTOR_STOP;
-    pickup();
+    pickup(catchDegree);
     delay(1000);
   }
   else
@@ -249,21 +254,68 @@ void gogogo()
 void setup()//initial
 {
   initServo();
-  Serial.begin(9600);
-  infraredReceiverDecode.begin();
+ Serial.begin(9600);
+ //infraredReceiverDecode.begin();
 }
 
 void loop()//loop
 {
+  //bottomArm1.write(90);
   /*if(state) go();
   else action();*/
-  #ifdef RUN_MODE
+  /*#ifdef RUN_MODE
   resetServo();//reset servo degree
   lineFlower();
   gogogo();
   #elif define DEBUG_MODE
   servoSerialDebuger();
-  #endif
+  #endif*/
+  uc leftDis = leftUltra.distanceCm();
+  uc rightDis = rightUltra.distanceCm();
+  Serial.print(leftDis);
+  Serial.print("\t");
+  Serial.println(rightDis);
+  /*if(leftDis < 10 || rightDis < 10)
+  {
+    delay(100);
+    leftDis = leftUltra.distanceCm();
+    rightDis = rightUltra.distanceCm();
+    if(leftDis < 10 || rightDis < 10)
+    {
+      delay(100);
+       leftDis = leftUltra.distanceCm();
+    rightDis = rightUltra.distanceCm();
+      if(leftDis < 10 || rightDis < 10)
+      {
+        pawArm.run(-100);
+        delay(2500);
+        pawArm.run(0);
+        delay(2000);
+         leftDis = leftUltra.distanceCm();
+        rightDis = rightUltra.distanceCm();
+        if(leftDis < 10 || rightDis < 10)
+        {
+          uc Dis = (leftDis < 10 ? leftDis : rightDis);
+          MOTOR_STOP
+          uc tmp[4];
+          tmp[0] = (leftDis < 10 ? 80 : 100);
+          tmp[1] = (catchDegree[1]);
+          tmp[2] = (catchDegree[2]);
+          tmp[3] = (catchDegree[3]);
+          pickup(tmp);
+          delay(1000);
+          pawArm.run(100);
+          delay(2500);
+          pawArm.run(0);
+          delay(2000);
+          resetServo();
+        }
+      }
+    }
+  }
+  else MOTOR_GO(50)*/
+  //;
+  
 //  Serial.println(Serial.read());
 //  Serial.println(LF1);
 //  Serial.println(LF2);
